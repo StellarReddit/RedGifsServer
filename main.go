@@ -1,14 +1,18 @@
 package main
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"github.com/StellarReddit/RedGifsWrapper"
 	"github.com/labstack/echo/v4"
 	"github.com/robfig/cron/v3"
 	"github.com/spf13/viper"
+	"math/rand"
+	"net"
 	"net/http"
 	"sync"
+	"time"
 )
 
 var (
@@ -22,6 +26,7 @@ const (
 	ErrNoHTTPPort         = "no HTTP port provided"
 	ErrNoRedGifsClientID  = "no RedGifs client id provided"
 	ErrNoRedGifsClientKey = "no RedGifs client secret provided"
+	ServerUserAgent       = "app.stellarreddit.RedGifsServer (email: legal@azimuthcore.com)"
 )
 
 type Credential struct {
@@ -95,7 +100,7 @@ func setupRedGifsWrapperClient(redGifsConfig RedGifsConfig) {
 	redGifsWrapperConfig := RedGifsWrapper.Config{
 		ClientID:     redGifsConfig.RedGifsClientId,
 		ClientSecret: redGifsConfig.RedGifsClientSecret,
-		UserAgent:    "app.stellarreddit.RedGifsServer (email: legal@azimuthcore.com)",
+		UserAgent:    ServerUserAgent,
 	}
 
 	client = RedGifsWrapper.NewClient(redGifsWrapperConfig)
@@ -105,7 +110,42 @@ func setupRedGifsWrapperClient(redGifsConfig RedGifsConfig) {
 // Importantly, it validates tests the token is valid. Sometimes RedGifs issues
 // broken tokens.
 func attemptAccessTokenRefresh() {
-	// TODO: Implement
+	maxRetries := 5
+	backoff := [5]time.Duration{5, 10, 30, 60, 120}
+
+	for i := 0; i < maxRetries; i++ {
+		accessToken, err := client.RequestNewAccessToken()
+
+		if err != nil {
+			time.Sleep(backoff[i] * time.Second)
+			continue
+		}
+
+		// Wait for the token to become active
+		time.Sleep(5 * time.Second)
+
+		randomIp := generateRandomIPv4Address()
+		_, err = client.LookupStreamURL(randomIp, ServerUserAgent, "temp", accessToken)
+
+		if err != nil {
+			time.Sleep(backoff[i] * time.Second)
+			continue
+		}
+
+		credential.accessTokenMutex.Lock()
+		credential.accessToken = accessToken
+		credential.accessTokenMutex.Unlock()
+		break
+	}
+}
+
+// generateRandomIPv4Address - generate a random IPv4 address for testing
+// access tokens.
+func generateRandomIPv4Address() string {
+	buf := make([]byte, 4)
+	ip := rand.Uint32()
+	binary.LittleEndian.PutUint32(buf, ip)
+	return fmt.Sprintf("%s", net.IP(buf))
 }
 
 // loadConfig - Loads the config at a given path, returning the
