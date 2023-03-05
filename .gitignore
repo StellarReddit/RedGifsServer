@@ -17,4 +17,5 @@
 # Go stuff
 .idea
 .DS_Store
+app.env
 
