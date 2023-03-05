@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/StellarReddit/RedGifsWrapper"
 	"github.com/labstack/echo/v4"
 	"github.com/robfig/cron/v3"
 	"github.com/spf13/viper"
@@ -10,6 +11,7 @@ import (
 
 var (
 	config RedGifsConfig
+	client RedGifsWrapper.Client
 )
 
 const (
@@ -39,6 +41,7 @@ func main() {
 	config = tempConfig
 
 	setupAccessTokenRefreshTask()
+	setupRedGifsWrapperClient(tempConfig)
 
 	e := echo.New()
 	e.GET("/redgifs/gif/:id", handleGifLookup)
@@ -59,6 +62,17 @@ func setupAccessTokenRefreshTask() {
 		attemptAccessTokenRefresh()
 	})
 	c.Start()
+}
+
+// setupRedGifsWrapperClient - Set up the RedGifs wrapper
+func setupRedGifsWrapperClient(redGifsConfig RedGifsConfig) {
+	redGifsWrapperConfig := RedGifsWrapper.Config{
+		ClientID:     redGifsConfig.RedGifsClientId,
+		ClientSecret: redGifsConfig.RedGifsClientSecret,
+		UserAgent:    "app.stellarreddit.RedGifsServer (email: legal@azimuthcore.com)",
+	}
+
+	client = RedGifsWrapper.NewClient(redGifsWrapperConfig)
 }
 
 // attemptAccessTokenRefresh - Attempts to refresh the access token up to 5 times.

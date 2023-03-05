@@ -3,6 +3,7 @@ module main
 go 1.19
 
 require (
+	github.com/StellarReddit/RedGifsWrapper v0.0.0-20230302200548-f066aa154620 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/labstack/echo/v4 v4.10.2 // indirect
