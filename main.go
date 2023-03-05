@@ -22,12 +22,13 @@ var (
 )
 
 const (
-	ErrNoConfigFile       = "no app.env config file found"
-	ErrNoHTTPPort         = "no HTTP port provided"
-	ErrNoRedGifsClientID  = "no RedGifs client id provided"
-	ErrNoRedGifsClientKey = "no RedGifs client secret provided"
-	ErrNoRedGifsTestId    = "no RedGifs test id provided"
-	ServerUserAgent       = "app.stellarreddit.RedGifsServer (email: legal@azimuthcore.com)"
+	ErrNoConfigFile             = "no app.env config file found"
+	ErrNoHTTPPort               = "no HTTP port provided"
+	ErrNoRedGifsClientID        = "no RedGifs client id provided"
+	ErrNoRedGifsClientKey       = "no RedGifs client secret provided"
+	ErrNoRedGifsTestId          = "no RedGifs test id provided"
+	ErrNoStellarClientUserAgent = "no Stellar client user agent provided"
+	ServerUserAgent             = "app.stellarreddit.RedGifsServer (email: legal@azimuthcore.com)"
 )
 
 type Credential struct {
@@ -36,10 +37,11 @@ type Credential struct {
 }
 
 type RedGifsConfig struct {
-	ListenPort          string `mapstructure:"LISTEN_PORT"`
-	RedGifsClientId     string `mapstructure:"REDGIFS_CLIENT_ID"`
-	RedGifsClientSecret string `mapstructure:"REDGIFS_CLIENT_SECRET"`
-	RedGifsTestId       string `mapstructure:"REDGIFS_TEST_ID"`
+	ListenPort             string `mapstructure:"LISTEN_PORT"`
+	RedGifsClientId        string `mapstructure:"REDGIFS_CLIENT_ID"`
+	RedGifsClientSecret    string `mapstructure:"REDGIFS_CLIENT_SECRET"`
+	RedGifsTestId          string `mapstructure:"REDGIFS_TEST_ID"`
+	StellarClientUserAgent string `mapstructure:"STELLAR_CLIENT_USER_AGENT"`
 }
 
 type RedGifStreamUrlResponse struct {
@@ -76,7 +78,7 @@ func handleGifLookup(c echo.Context) error {
 	accessToken := credential.accessToken
 	credential.accessTokenMutex.RUnlock()
 
-	streamUrl, err := client.LookupStreamURL(c.RealIP(), "temp", gifId, accessToken)
+	streamUrl, err := client.LookupStreamURL(c.RealIP(), config.StellarClientUserAgent, gifId, accessToken)
 	if errors.Is(err, RedGifsWrapper.ErrNotFound) {
 		return c.String(http.StatusNotFound, "Could not find the stream url for the gif.")
 	} else if err != nil {
@@ -195,6 +197,10 @@ func validateConfig(config RedGifsConfig) error {
 
 	if len(config.RedGifsTestId) == 0 {
 		entries = append(entries, errorEntry{"RedGifsTestId", ErrNoRedGifsTestId})
+	}
+
+	if len(config.StellarClientUserAgent) == 0 {
+		entries = append(entries, errorEntry{"StellarClientUserAgent", ErrNoStellarClientUserAgent})
 	}
 
 	if len(entries) == 0 {
