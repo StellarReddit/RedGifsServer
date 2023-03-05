@@ -8,11 +8,13 @@ import (
 	"github.com/robfig/cron/v3"
 	"github.com/spf13/viper"
 	"net/http"
+	"sync"
 )
 
 var (
-	config RedGifsConfig
-	client RedGifsWrapper.Client
+	config     RedGifsConfig
+	client     RedGifsWrapper.Client
+	credential Credential
 )
 
 const (
@@ -21,6 +23,11 @@ const (
 	ErrNoRedGifsClientID  = "no RedGifs client id provided"
 	ErrNoRedGifsClientKey = "no RedGifs client secret provided"
 )
+
+type Credential struct {
+	accessTokenMutex sync.RWMutex
+	accessToken      string
+}
 
 type RedGifsConfig struct {
 	ListenPort          string `mapstructure:"LISTEN_PORT"`
@@ -58,7 +65,11 @@ func main() {
 func handleGifLookup(c echo.Context) error {
 	gifId := c.Param("id")
 
-	streamUrl, err := client.LookupStreamURL(c.RealIP(), "temp", gifId, "temp")
+	credential.accessTokenMutex.RLock()
+	accessToken := credential.accessToken
+	credential.accessTokenMutex.RUnlock()
+
+	streamUrl, err := client.LookupStreamURL(c.RealIP(), "temp", gifId, accessToken)
 	if errors.Is(err, RedGifsWrapper.ErrNotFound) {
 		return c.String(http.StatusNotFound, "Could not find the stream url for the gif.")
 	} else if err != nil {
