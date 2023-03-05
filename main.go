@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/labstack/echo/v4"
 	"github.com/spf13/viper"
+	"net/http"
 )
 
 var (
@@ -17,7 +19,7 @@ const (
 )
 
 type RedGifsConfig struct {
-	HttpPort            string `mapstructure:"LISTEN_PORT"`
+	ListenPort          string `mapstructure:"LISTEN_PORT"`
 	RedGifsClientId     string `mapstructure:"REDGIFS_CLIENT_ID"`
 	RedGifsClientSecret string `mapstructure:"REDGIFS_CLIENT_SECRET"`
 }
@@ -34,6 +36,17 @@ func main() {
 	}
 
 	config = tempConfig
+
+	e := echo.New()
+	e.GET("/redgifs/gif/:id", handleGifLookup)
+	e.IPExtractor = echo.ExtractIPFromXFFHeader()
+	e.Logger.Fatal(e.Start(config.ListenPort))
+}
+
+// handleGifLookup - Handles GET requests to send the stream URL to the client.
+func handleGifLookup(c echo.Context) error {
+	gifId := c.Param("id")
+	return c.String(http.StatusOK, "You requested "+gifId)
 }
 
 // loadConfig - Loads the config at a given path, returning the
@@ -58,7 +71,7 @@ func loadConfig(path string) (RedGifsConfig, error) {
 	return rgConfig, nil
 }
 
-// validateConfig - Checks if certain properties are present
+// validateConfig - Checks if certain properties are present.
 func validateConfig(config RedGifsConfig) error {
 	type errorEntry struct {
 		name    string
@@ -67,8 +80,8 @@ func validateConfig(config RedGifsConfig) error {
 
 	var errors []errorEntry
 
-	if len(config.HttpPort) == 0 {
-		errors = append(errors, errorEntry{"HttpPort", ErrNoHTTPPort})
+	if len(config.ListenPort) == 0 {
+		errors = append(errors, errorEntry{"ListenPort", ErrNoHTTPPort})
 	}
 
 	if len(config.RedGifsClientId) == 0 {
