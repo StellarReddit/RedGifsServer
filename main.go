@@ -62,7 +62,7 @@ func main() {
 	config = tempConfig
 
 	setupAccessTokenRefreshTask()
-	setupRedGifsWrapperClient(tempConfig)
+	setupRedGifsWrapperClient(config)
 
 	e := echo.New()
 	e.GET("/redgifs/gif/:id", handleGifLookup)
