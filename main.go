@@ -179,30 +179,30 @@ func validateConfig(config RedGifsConfig) error {
 		message string
 	}
 
-	var errors []errorEntry
+	var entries []errorEntry
 
 	if len(config.ListenPort) == 0 {
-		errors = append(errors, errorEntry{"ListenPort", ErrNoHTTPPort})
+		entries = append(entries, errorEntry{"ListenPort", ErrNoHTTPPort})
 	}
 
 	if len(config.RedGifsClientId) == 0 {
-		errors = append(errors, errorEntry{"RedGifsClientId", ErrNoRedGifsClientID})
+		entries = append(entries, errorEntry{"RedGifsClientId", ErrNoRedGifsClientID})
 	}
 
 	if len(config.RedGifsClientSecret) == 0 {
-		errors = append(errors, errorEntry{"RedGifsClientSecret", ErrNoRedGifsClientKey})
+		entries = append(entries, errorEntry{"RedGifsClientSecret", ErrNoRedGifsClientKey})
 	}
 
 	if len(config.RedGifsTestId) == 0 {
-		errors = append(errors, errorEntry{"RedGifsTestId", ErrNoRedGifsTestId})
+		entries = append(entries, errorEntry{"RedGifsTestId", ErrNoRedGifsTestId})
 	}
 
-	if len(errors) == 0 {
+	if len(entries) == 0 {
 		return nil
 	}
 
 	var errorBuilder string
-	for _, entry := range errors {
+	for _, entry := range entries {
 		errorBuilder += fmt.Sprintf("%s: %s\n", entry.name, entry.message)
 	}
 
