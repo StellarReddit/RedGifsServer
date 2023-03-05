@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/labstack/echo/v4"
+	"github.com/robfig/cron/v3"
 	"github.com/spf13/viper"
 	"net/http"
 )
@@ -37,6 +38,8 @@ func main() {
 
 	config = tempConfig
 
+	setupAccessTokenRefreshTask()
+
 	e := echo.New()
 	e.GET("/redgifs/gif/:id", handleGifLookup)
 	e.IPExtractor = echo.ExtractIPFromXFFHeader()
@@ -47,6 +50,22 @@ func main() {
 func handleGifLookup(c echo.Context) error {
 	gifId := c.Param("id")
 	return c.String(http.StatusOK, "You requested "+gifId)
+}
+
+// setupAccessTokenRefreshTask - Run the refresh task on Saturdays at midnight
+func setupAccessTokenRefreshTask() {
+	c := cron.New()
+	_, _ = c.AddFunc("@weekly", func() {
+		attemptAccessTokenRefresh()
+	})
+	c.Start()
+}
+
+// attemptAccessTokenRefresh - Attempts to refresh the access token up to 5 times.
+// Importantly, it validates tests the token is valid. Sometimes RedGifs issues
+// broken tokens.
+func attemptAccessTokenRefresh() {
+	// TODO: Implement
 }
 
 // loadConfig - Loads the config at a given path, returning the
