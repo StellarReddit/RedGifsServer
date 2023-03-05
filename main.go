@@ -26,6 +26,7 @@ const (
 	ErrNoHTTPPort         = "no HTTP port provided"
 	ErrNoRedGifsClientID  = "no RedGifs client id provided"
 	ErrNoRedGifsClientKey = "no RedGifs client secret provided"
+	ErrNoRedGifsTestId    = "no RedGifs test id provided"
 	ServerUserAgent       = "app.stellarreddit.RedGifsServer (email: legal@azimuthcore.com)"
 )
 
@@ -38,6 +39,7 @@ type RedGifsConfig struct {
 	ListenPort          string `mapstructure:"LISTEN_PORT"`
 	RedGifsClientId     string `mapstructure:"REDGIFS_CLIENT_ID"`
 	RedGifsClientSecret string `mapstructure:"REDGIFS_CLIENT_SECRET"`
+	RedGifsTestId       string `mapstructure:"REDGIFS_TEST_ID"`
 }
 
 type RedGifStreamUrlResponse struct {
@@ -125,7 +127,7 @@ func attemptAccessTokenRefresh() {
 		time.Sleep(5 * time.Second)
 
 		randomIp := generateRandomIPv4Address()
-		_, err = client.LookupStreamURL(randomIp, ServerUserAgent, "temp", accessToken)
+		_, err = client.LookupStreamURL(randomIp, ServerUserAgent, config.RedGifsTestId, accessToken)
 
 		if err != nil {
 			time.Sleep(backoff[i] * time.Second)
@@ -189,6 +191,10 @@ func validateConfig(config RedGifsConfig) error {
 
 	if len(config.RedGifsClientSecret) == 0 {
 		errors = append(errors, errorEntry{"RedGifsClientSecret", ErrNoRedGifsClientKey})
+	}
+
+	if len(config.RedGifsTestId) == 0 {
+		errors = append(errors, errorEntry{"RedGifsTestId", ErrNoRedGifsTestId})
 	}
 
 	if len(errors) == 0 {
