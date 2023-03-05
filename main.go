@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/StellarReddit/RedGifsWrapper"
 	"github.com/labstack/echo/v4"
@@ -25,6 +26,10 @@ type RedGifsConfig struct {
 	ListenPort          string `mapstructure:"LISTEN_PORT"`
 	RedGifsClientId     string `mapstructure:"REDGIFS_CLIENT_ID"`
 	RedGifsClientSecret string `mapstructure:"REDGIFS_CLIENT_SECRET"`
+}
+
+type RedGifStreamUrlResponse struct {
+	Url string `json:"streamUrl"`
 }
 
 func main() {
@@ -52,7 +57,17 @@ func main() {
 // handleGifLookup - Handles GET requests to send the stream URL to the client.
 func handleGifLookup(c echo.Context) error {
 	gifId := c.Param("id")
-	return c.String(http.StatusOK, "You requested "+gifId)
+
+	streamUrl, err := client.LookupStreamURL(c.RealIP(), "temp", gifId, "temp")
+	if errors.Is(err, RedGifsWrapper.ErrNotFound) {
+		return c.String(http.StatusNotFound, "Could not find the stream url for the gif.")
+	} else if err != nil {
+		return c.String(http.StatusInternalServerError, "Something went wrong requesting the gif.")
+	}
+
+	var response RedGifStreamUrlResponse
+	response.Url = streamUrl
+	return c.JSON(http.StatusOK, response)
 }
 
 // setupAccessTokenRefreshTask - Run the refresh task on Saturdays at midnight
