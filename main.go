@@ -83,11 +83,11 @@ func handleGifLookup(c echo.Context) error {
 		return c.String(http.StatusNotFound, "Could not find the stream url for the gif.")
 	} else if err != nil {
 		return c.String(http.StatusInternalServerError, "Something went wrong requesting the gif.")
+	} else {
+		var response RedGifStreamUrlResponse
+		response.Url = streamUrl
+		return c.JSON(http.StatusOK, response)
 	}
-
-	var response RedGifStreamUrlResponse
-	response.Url = streamUrl
-	return c.JSON(http.StatusOK, response)
 }
 
 // setupAccessTokenRefreshTask - Run the refresh task on Saturdays at midnight
