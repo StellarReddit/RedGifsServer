@@ -114,14 +114,13 @@ func setupRedGifsWrapperClient(redGifsConfig RedGifsConfig) {
 // Importantly, it validates tests the token is valid. Sometimes RedGifs issues
 // broken tokens.
 func attemptAccessTokenRefresh() {
-	maxRetries := 5
 	backoff := [5]time.Duration{5, 10, 30, 60, 120}
 
-	for i := 0; i < maxRetries; i++ {
+	for _, v := range backoff {
 		accessToken, err := client.RequestNewAccessToken()
 
 		if err != nil {
-			time.Sleep(backoff[i] * time.Second)
+			time.Sleep(v * time.Second)
 			continue
 		}
 
@@ -132,7 +131,7 @@ func attemptAccessTokenRefresh() {
 		_, err = client.LookupStreamURL(randomIp, ServerUserAgent, config.RedGifsTestId, accessToken)
 
 		if err != nil {
-			time.Sleep(backoff[i] * time.Second)
+			time.Sleep(v * time.Second)
 			continue
 		}
 
